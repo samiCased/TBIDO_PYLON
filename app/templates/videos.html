@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Videos{% endblock %}
+
+{% block content %}
+<style>
+/* --- Layout & Animation --- */
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: center;
+}
+
+.fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 1s ease-out forwards;
+}
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Welcome Banner --- */
+.welcome-banner {
+    background: linear-gradient(to right, #701127, #2a4378);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 20px;
+    text-align: center;
+    margin: 2rem auto;
+    max-width: 800px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Video Card --- */
+.video-card {
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    width: 300px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 6px 16px rgba(112, 17, 39, 0.2);
+}
+.video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 24px rgba(112, 17, 39, 0.3);
+}
+
+/* --- Thumbnail Image --- */
+.video-banner {
+    position: relative;
+    height: 170px;
+    background-color: #000;
+}
+.video-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.video-title-overlay {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    font-weight: bold;
+    background: linear-gradient(to right, #74172d, #2a4378);
+    color: white;
+}
+
+/* --- Modal Overlay --- */
+#videoModal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+#videoModal.active {
+    display: flex;
+}
+
+/* --- Modal Content with Responsive Video --- */
+.modal-content {
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    position: relative;
+}
+.modal-content video {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: contain;
+}
+.close-modal {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+}
+</style>
+
+<!-- Welcome Banner -->
+<div class="welcome-banner fade-in">
+    <h2 class="mb-0">Welcome to our <span class="fw-bold">Digital Library</span></h2>
+</div>
+
+<!-- Video Grid -->
+<div class="container">
+    {% for videopost in videoposts %}
+    <div class="video-card fade-in" style="animation-delay: {{ forloop.counter0|add:"0.1"|floatformat:1 }}s;">
+        <div class="video-banner" onclick="openModal('{{ videopost.video.url }}')">
+            <img src="{{ videopost.banner.url }}" alt="{{ videopost.title }}">
+            <div class="video-title-overlay">{{ videopost.title }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Video Modal -->
+<div id="videoModal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <video controls id="modalVideo">
+            <source id="modalVideoSource" src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+</div>
+
+<!-- JS: Modal Logic -->
+<script>
+function openModal(videoUrl) {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    const source = document.getElementById('modalVideoSource');
+    source.src = videoUrl;
+    video.load();
+    modal.classList.add('active');
+}
+
+function closeModal() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    modal.classList.remove('active');
+    video.pause();
+}
+</script>
+{% endblock %}

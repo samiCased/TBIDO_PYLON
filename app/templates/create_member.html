@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block content %}
+<style>
+  /* Highlight gradient text for labels */
+  .highlight {
+      font-weight: 700;
+      background: linear-gradient(to right, #74172d, #2a4378);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+  }
+
+  /* Container for each form step */
+  .form-step {
+      max-width: 420px;
+      margin: 3rem auto;
+      padding: 1.8rem 2rem;
+      border: 3px solid;
+      border-image-slice: 1;
+      border-image-source: linear-gradient(to right, #74172d, #2a4378);
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 8px 20px rgba(116, 23, 45, 0.15);
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      display: none;
+  }
+  .form-step.active {
+      display: block;
+      opacity: 1;
+      transform: scale(1);
+  }
+
+  /* Center the form container */
+  .container.mt-5 {
+      min-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+  }
+
+  label.highlight {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 1.15rem;
+      user-select: none;
+  }
+
+  /* Form controls */
+  .form-control {
+      border-radius: 10px;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      border: 2px solid #ccc;
+      transition: border-color 0.3s ease;
+      width: 100%;
+      box-sizing: border-box;
+  }
+  .form-control:focus {
+      border-color: #74172d;
+      outline: none;
+      box-shadow: 0 0 6px #74172d88;
+  }
+  .form-control.is-invalid {
+      border-color: #d9534f;
+      box-shadow: none;
+  }
+
+  /* Buttons container */
+  .btn-row {
+      margin-top: 1.6rem;
+      display: flex;
+      justify-content: space-between;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+      gap: 1rem;
+  }
+  /* Gradient buttons */
+  .btn-gradient {
+      flex: 1;
+      background: linear-gradient(to right, #74172d, #2a4378);
+      border: none;
+      color: white;
+      font-weight: 700;
+      padding: 0.65rem 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+  }
+  .btn-gradient:hover {
+      background: linear-gradient(to right, #2a4378, #74172d);
+  }
+  .btn-gradient:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+  }
+
+  /* Summary container */
+  #summary {
+      max-width: 900px;
+      margin: 3rem auto;
+      padding: 2rem 2.5rem;
+      border-radius: 16px;
+      border: 3px solid;
+      border-image-slice: 1;
+      border-image-source: linear-gradient(to right, #74172d, #2a4378);
+      background: white;
+      box-shadow: 0 10px 25px rgba(116, 23, 45, 0.15);
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      display: none;
+  }
+  #summary.active {
+      display: block;
+      opacity: 1;
+      transform: scale(1);
+  }
+  #summary h4 {
+      margin-bottom: 1.6rem;
+      user-select: none;
+  }
+
+  /* Each field summary box */
+  .summary-field {
+      border-radius: 14px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1rem;
+      border: 2px solid transparent;
+      background: #f8f8f8;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.07);
+      transition: border 0.3s ease, box-shadow 0.3s ease;
+      cursor: default;
+      user-select: none;
+  }
+  .summary-field:hover {
+      border-image-slice: 1;
+      border-image-source: linear-gradient(to right, #74172d, #2a4378);
+      border-style: solid;
+      border-width: 2px;
+      box-shadow: 0 6px 18px rgba(116, 23, 45, 0.35);
+  }
+  .summary-field strong {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: #74172d;
+  }
+
+  /* Submit button */
+  #summary button[type=submit] {
+      margin-top: 1.8rem;
+      width: 100%;
+  }
+  @keyframes popIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.75);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    70% {
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .form-step.active.pop-animation {
+    animation: popIn 0.4s ease forwards;
+  }
+  #summary-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  .summary-field {
+    width: 100%;
+  }
+</style>
+
+<div class="container mt-5">
+  <h2 class="text-center highlight mb-5">Complete Your Registration</h2>
+
+  <form method="post" enctype="multipart/form-data" id="member-form" novalidate>
+    {% csrf_token %}
+    <div id="form-steps">
+      {% for field in form %}
+        <div class="form-step" data-step="{{ forloop.counter0 }}">
+          <label for="{{ field.id_for_label }}" class="highlight">{{ field.label }}</label>
+          {{ field|add_class:"form-control" }}
+          {% if field.errors %}
+            <div class="text-danger">{{ field.errors }}</div>
+          {% endif %}
+          <div class="btn-row">
+            {% if not forloop.first %}
+              <button type="button" class="btn-gradient back-btn">Back</button>
+            {% endif %}
+            <button type="button" class="btn-gradient next-btn">{% if forloop.last %}Finish{% else %}Next{% endif %}</button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div id="summary" aria-live="polite" aria-atomic="true">
+      <h4 class="highlight">Summary</h4>
+      <div id="summary-content"></div>
+      <button type="submit" class="btn-gradient">Submit</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const steps = document.querySelectorAll('.form-step');
+  const summary = document.getElementById('summary');
+  const summaryContent = document.getElementById('summary-content');
+  const form = document.getElementById('member-form');
+  let current = 0;
+
+  function showStep(index) {
+    steps.forEach((step, i) => {
+      step.classList.remove('active', 'pop-animation');
+      if (i === index) {
+        step.classList.add('active');
+  
+        // Trigger reflow to restart animation
+        void step.offsetWidth;
+        step.classList.add('pop-animation');
+      }
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function buildSummary() {
+    summaryContent.innerHTML = '';
+    // Remove any previous hidden inputs added to form (to avoid duplicates)
+    const oldHiddenInputs = form.querySelectorAll('input[type=hidden].summary-hidden');
+    oldHiddenInputs.forEach(input => input.remove());
+
+    steps.forEach(step => {
+      const input = step.querySelector('input, select, textarea');
+      const label = step.querySelector('label').innerText;
+      const value = input.value.trim() || 'N/A';
+
+      // Create the summary field container
+      const fieldDiv = document.createElement('div');
+      fieldDiv.classList.add('summary-field');
+      fieldDiv.innerHTML = `<strong>${label}</strong>${value.replace(/\n/g, '<br>')}`;
+
+      summaryContent.appendChild(fieldDiv);
+
+      // Add hidden input for form submission
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = input.name;
+      hiddenInput.value = input.value;
+      hiddenInput.classList.add('summary-hidden');
+      form.appendChild(hiddenInput);
+    });
+
+    summary.classList.add('active');
+  }
+
+  // Next buttons
+  document.querySelectorAll('.next-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const step = steps[current];
+      const input = step.querySelector('input, select, textarea');
+
+      if (!input.value.trim()) {
+        input.classList.add('is-invalid');
+        input.focus();
+        return;
+      } else {
+        input.classList.remove('is-invalid');
+      }
+
+      current++;
+      if (current < steps.length) {
+        showStep(current);
+      } else {
+        steps.forEach(s => s.classList.remove('active'));
+        buildSummary();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // Back buttons
+  document.querySelectorAll('.back-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (current > 0) {
+        current--;
+        showStep(current);
+      }
+    });
+  });
+
+  // Initialize
+  showStep(current);
+});
+</script>
+{% endblock %}

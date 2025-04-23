@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+  <title>Profile</title>
+  <style>
+    .highlight {
+      font-weight: 700;
+      background: linear-gradient(to right, #74172d, #2a4378);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .profile-pic-container {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #74172d;
+      box-shadow: 0 0 15px rgba(116, 23, 45, 0.6);
+      margin: auto;
+    }
+    .profile-pic-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .attribute-card {
+      border: 2px solid #74172d;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1rem;
+      background-color: #fff;
+      box-shadow: 0 2px 8px rgba(116, 23, 45, 0.1);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .attribute-card.pop-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .attribute-label {
+      min-width: 140px;
+      font-weight: 600;
+      color: #74172d;
+    }
+    .attribute-value {
+      flex-grow: 1;
+      font-size: 1rem;
+      color: #333;
+    }
+    .attribute-input {
+      flex-grow: 1;
+      font-size: 1rem;
+    }
+    .edit-icon {
+      color: #74172d;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: color 0.3s;
+      user-select: none;
+    }
+    .edit-icon:hover {
+      color: #2a4378;
+    }
+    #save-btn {
+      display: none;
+      margin-top: 1rem;
+      background: linear-gradient(to right, #74172d, #2a4378);
+      border: none;
+      color: white;
+      font-weight: 700;
+      padding: 0.5rem 1.5rem;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(116, 23, 45, 0.4);
+      transition: background 0.4s ease;
+    }
+    #save-btn:hover {
+      background: linear-gradient(to right, #2a4378, #74172d);
+    }
+    .custom-input {
+        border: 2px solid #74172d;
+        border-radius: 12px;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        color: #333;
+        width: 100%;
+        box-sizing: border-box;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(116, 23, 45, 0.1);
+      }
+      
+      .custom-input:focus {
+        outline: none;
+        border-color: #2a4378;
+        box-shadow: 0 0 8px rgba(42, 67, 120, 0.6);
+        background-color: #fff;
+      }
+      
+      /* Date inputs: bigger padding for easier clicking */
+      .custom-date-input {
+        padding: 0.5rem 1rem;
+        border: 2px solid #74172d;
+        border-radius: 12px;
+        font-size: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #fff;
+        color: #333;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      .custom-date-input:focus {
+        outline: none;
+        border-color: #2a4378;
+        box-shadow: 0 0 8px rgba(42, 67, 120, 0.6);
+      }
+      
+      /* File inputs: custom style */
+      .custom-file-input {
+        border: 2px solid #74172d;
+        border-radius: 12px;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #fff;
+        color: #74172d;
+        cursor: pointer;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      .custom-file-input:hover {
+        border-color: #2a4378;
+        box-shadow: 0 0 8px rgba(42, 67, 120, 0.6);
+      }
+      .sticky-sidebar {
+        position: sticky;
+        top: 80px; /* adjust this to how far from top you want */
+        align-self: start; /* ensure it doesn't stretch */
+      }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row g-4">
+        <div class="col-md-4 text-center sticky-sidebar">
+            <div class="profile-pic-container mb-3">
+              <img src="{{ profile.pictureFullBody.url }}" alt="Profile Picture" />
+            </div>
+            <h3 class="highlight">{{ profile.firstName }} {{ profile.lastName }}</h3>
+            
+            <!-- Save button -->
+            <button type="submit" form="profile-form" id="save-btn">Save Changes</button>
+          </div>
+          
+          <div class="col-md-8">
+            <form method="POST" enctype="multipart/form-data" id="profile-form" novalidate>
+              {% csrf_token %}
+              {% for field in form.visible_fields %}
+                <div class="attribute-card" id="attr-{{ field.name }}">
+                  <span class="edit-icon" data-field="{{ field.name }}" title="Edit">&#9998;</span>
+                  <label class="attribute-label highlight" for="{{ field.id_for_label }}">{{ field.label }}:</label>
+          
+                  <span class="attribute-value" id="display-{{ field.name }}">{{ field.value }}</span>
+                  <span class="d-none">
+                    {{ field }}
+                    {% if field.errors %}
+                      <div class="text-danger small">{{ field.errors }}</div>
+                    {% endif %}
+                  </span>
+                </div>
+              {% endfor %}
+            </form>
+          </div>
+    </div>
+  </div>
+
+  <script>
+    // Animate pop-in cards on load
+    window.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.attribute-card').forEach((card, i) => {
+        setTimeout(() => card.classList.add('pop-in'), i * 150);
+      });
+    });
+
+    // Editable toggling
+    const form = document.getElementById('profile-form');
+    const saveBtn = document.getElementById('save-btn');
+
+    // Track if any field is editing to show/hide Save button
+    let editing = false;
+
+    form.querySelectorAll('.edit-icon').forEach(icon => {
+      icon.addEventListener('click', e => {
+        const fieldName = e.target.dataset.field;
+        toggleEdit(fieldName);
+      });
+    });
+
+    function toggleEdit(fieldName) {
+      const attrCard = document.getElementById('attr-' + fieldName);
+      const displaySpan = attrCard.querySelector('#display-' + fieldName);
+      const inputWrapper = displaySpan.nextElementSibling;
+
+      if (!inputWrapper) return;
+
+      // Show input, hide display
+      displaySpan.classList.toggle('d-none');
+      inputWrapper.classList.toggle('d-none');
+
+      // Focus the input if now visible
+      if (!inputWrapper.classList.contains('d-none')) {
+        const inputElem = inputWrapper.querySelector('input, select, textarea');
+        if (inputElem) inputElem.focus();
+        // Mark as editing
+        editing = true;
+        saveBtn.style.display = 'inline-block';
+      }
+    }
+
+    // Optional: hide save button if no field is edited after reset (could be improved with form reset handling)
+    form.addEventListener('submit', () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+    });
+  </script>
+{% endblock %}
